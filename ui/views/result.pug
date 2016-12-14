@@ -1,0 +1,19 @@
+doctype html
+html(lang="en")
+  head
+    title PDF to JPEGs conversion result
+    meta(charset='utf-8')
+    link(rel="stylesheet", href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css")
+    link(rel="stylesheet", href="https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.min.css")
+    script(src="//code.jquery.com/jquery-1.12.3.js")
+  body
+      div(class="container theme-showcase", role="main")
+        div(class="jumbotron")
+          h1 PDF to JPEGs conversion result
+
+        div(class="page-header")
+          h1 Result:
+        p Download link:&nbsp;
+          a(href=link) #{link}
+        p
+          a(href="/", class="btn btn-info", role="button") Convert another PDF

@@ -1,0 +1,6 @@
+#!/bin/bash -ex
+
+APP=pdfsplit
+PORT=8081
+
+KUBECTL_RUN_PARAMS="--env=\"GCLOUD_PROJECT=$GCLOUD_PROJECT\" --env=\"GCLOUD_STORAGE_BUCKET=$GCLOUD_STORAGE_BUCKET\" --env=\"CONVERT_EXECUTABLE=/usr/bin/convert\""

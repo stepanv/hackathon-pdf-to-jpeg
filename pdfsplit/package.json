@@ -1,0 +1,23 @@
+{
+  "name": "docker_web_app",
+  "version": "1.0.0",
+  "description": "PDF to JPG online",
+  "author": "Stepan Vavra <vavra.stepan@gmail.com>",
+  "main": "pdfsplit.js",
+  "scripts": {
+    "start": "node pdfsplit.js"
+  },
+  "dependencies": {
+    "formidable": "latest",
+
+    "fs": "latest",
+    "tmp": "latest",
+    "zip-folder": "latest",
+
+    "@google-cloud/storage": "0.3.0",
+    "body-parser": "1.15.2",
+    "express": "4.14.0",
+    "multer": "1.2.0",
+    "pug": "2.0.0-beta6"
+  }
+}

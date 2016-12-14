@@ -1,0 +1,43 @@
+doctype html
+html(lang="en")
+  head
+    title Convert PDF to JPEGs with ease!
+    meta(charset='utf-8')
+    link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css", integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u", crossorigin="anonymous")
+    link(rel="stylesheet", href="https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.min.css")
+    script(src="//code.jquery.com/jquery-1.12.3.js")
+    style(type='text/css').
+               .file {
+                    visibility: hidden;
+                    position: absolute;
+                }
+    script.
+      $(document).on('click', '.browse', function(){
+        var file = $(this).parent().parent().parent().find('.file');
+        file.trigger('click');
+      });
+      $(document).on('change', '.file', function(){
+        $(this).parent().find('.form-control').val($(this).val().replace(/C:\\fakepath\\/i, ''));
+      });
+  body
+      div(class="container theme-showcase", role="main")
+        div(class="jumbotron")
+          h1 Convert PDF to JPEGs with ease!
+          p An example application that uses Google Cloud and multiple microservices to convert a PDF to a JPG files archived in a ZIP
+
+        div(class="page-header")
+          h1 Fill the form:
+        form(method="POST", action="/upload", enctype="multipart/form-data")
+          div(class="form-group")
+            label(for="file") PDF File input
+            input(type="file", name="file", class="file")
+            div(class="input-group col-xs-12")
+              span(class="input-group-addon")
+                i(class="glyphicon glyphicon-picture")
+              input(type="text", class="form-control input-lg", disabled="disabled", placeholder="Upload PDF")
+              span(class="input-group-btn")
+                button(class="browse btn btn-primary input-lg", type="button")
+                  i(class="glyphicon glyphicon-search")
+                  Browse
+            small(id="fileHelp", class="form-text text-muted") Choose a valid PDF file from your filesystem. Any other option might result in an instability of the service.
+          button(type="submit", class="btn btn-primary") Submit
