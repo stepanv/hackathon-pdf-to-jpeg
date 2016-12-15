@@ -6,6 +6,7 @@ var fs = require("fs");
 var tmp = require('tmp');
 var child_process = require('child_process');
 var zipFolder = require('zip-folder');
+var request = require('request');
 
 const format = require('util').format;
 const Multer = require('multer');
@@ -22,7 +23,8 @@ const Storage = require('@google-cloud/storage');
 // Instantiate a storage client
 const storage = Storage();
 
-const CONVERT_EXECUTABLE = process.env.CONVERT_EXECUTABLE || "/usr/local/bin/convert";
+const GS_EXECUTABLE = process.env.CONVERT_EXECUTABLE || "/usr/local/bin/gs";
+const PDF2JPG_URI = process.env.PDF2JPG_URI || "http://localhost:8082/pdf2jpg";
 
 var bucketName = process.env.GCLOUD_STORAGE_BUCKET;
 console.log("Will use bucket: " + bucketName);
@@ -53,58 +55,109 @@ app.post('/pdf', multer.single('file'), (req, res, next) => {
             ls.stdout.on('data', data => {
                 console.log(`stdout: ${data}`);
 
-                tmp.dir({ mode: '0750', prefix: 'convert_output_' }, (err, dirPath) => {
+                tmp.dir({mode: '0750', prefix: 'convert_output_'}, (err, dirPath) => {
                     if (err) throw err;
 
-                    const convert = spawn(CONVERT_EXECUTABLE, ['-quality','95', '-verbose', '-colorspace', 'rgb', '-density', '150', path, dirPath + '/image.jpg'])
+                    //const convert = spawn(CONVERT_EXECUTABLE, ['-quality','95', '-verbose', '-colorspace', 'rgb', '-density',
+                    // '150', path, dirPath + '/image.jpg'])
+                    const split = spawn(GS_EXECUTABLE, ['-sDEVICE=pdfwrite', '-dSAFER', '-o', dirPath + '/outname.%d.pdf', path])
 
-                    convert.stderr.on('data', data => {
+                    split.stderr.on('data', data => {
                         console.log("Convert error output: " + data);
                     });
-                    convert.on('close', code => {
+                    split.stdout.on('data', data => {
+                        console.log("Convert std output: " + data);
+                    });
+                    split.on('close', code => {
                         if (code == 0) {
-                            console.log("Convert went OK")
+                            console.log("Convert went OK: " + dirPath)
 
-                            tmp.file({mode: '0644', prefix: 'prefix-', postfix: '.zip'}, (err, zipPath, fd) => {
+                            tmp.dir({mode: '0750', prefix: 'jpg_output_'}, (err, jpgDirPath) => {
+                                if (err) throw err;
 
-                                zipFolder(dirPath, zipPath, (err) => {
-                                    if(err) {
-                                        console.log('oh no!', err);
-                                    } else {
+                                // iterate over each file
+                                fs.readdir(dirPath, (errReadDir, files) => {
 
-                                        console.log("Uploading file to Cloud Storage.")
-                                        // upload the resulting zip to the Cloud Storage
-                                        // Create a new blob in the bucket and upload the file data.
-                                        const blob = bucket.file(req.file.originalname + "-" + Math.floor((Math.random() * 1000000000000000000000) + 1) + ".zip");
-                                        const blobStream = blob.createWriteStream();
-
-                                        blobStream.on('error', (err) => {
-                                            next(err);
-                                            console.log("Error: " + JSON.stringify(err, null, 2));
-                                            return;
-                                        });
-
-                                        blobStream.on('finish', () => {
-                                            // The public URL can be used to directly access the file via HTTP.
-                                            const publicUrl = format(`https://storage.googleapis.com/${bucket.name}/${blob.name}`);
-                                            res.status(200).send(publicUrl);
-                                            console.log("Public URL: " + publicUrl)
-                                        });
-
-                                        fs.readFile(zipPath, (err, data) => {
-                                            if (err) throw err;
-                                            blobStream.end(data);
-                                        });
+                                    var pictureCount = {
+                                        count: 0
                                     }
+                                    const totalCount = files.length;
+
+                                    files.forEach(pdfFile => {
+
+                                        if (pdfFile == "." || pdfFile == "..") {
+                                            return;
+                                        }
+                                        var pdfFilePath = dirPath + "/" + pdfFile
+                                        console.log("Iterating over pdf page file: " + pdfFilePath);
+
+                                        fs.createReadStream(pdfFilePath).pipe(request
+                                            .post(PDF2JPG_URI)
+                                            .on('error', (err) => {
+                                                console.log("PDF File streaming error: " + err);
+                                            })
+                                            .on('response', (response) => {
+                                                console.log("Response for file " + pdfFilePath + ": " + response.statusCode) // 200
+
+                                                ++pictureCount.count;
+
+                                                // we have one picture
+                                                console.log("Received picture: " + pictureCount.count)
+                                                if (pictureCount.count == totalCount) {
+                                                    // we have all images
+
+                                                    tmp.file({mode: '0644', prefix: 'prefix-', postfix: '.zip'}, (err, zipPath, fd) => {
+
+                                                        zipFolder(jpgDirPath, zipPath, (err) => {
+                                                            if (err) {
+                                                                console.log('oh no!', err);
+                                                            } else {
+
+                                                                console.log("Uploading file to Cloud Storage.")
+                                                                // upload the resulting zip to the Cloud Storage
+                                                                // Create a new blob in the bucket and upload the file data.
+                                                                const blob = bucket.file(req.file.originalname + "-" + Math.floor((Math.random() * 1000000000000000000000) + 1) + ".zip");
+                                                                const blobStream = blob.createWriteStream();
+
+                                                                blobStream.on('error', (err) => {
+                                                                    next(err);
+                                                                    console.log("Error: " + JSON.stringify(err, null, 2));
+                                                                    return;
+                                                                });
+
+                                                                blobStream.on('finish', () => {
+                                                                    // The public URL can be used to directly access the file via HTTP.
+                                                                    const publicUrl = format(`https://storage.googleapis.com/${bucket.name}/${blob.name}`);
+                                                                    res.status(200).send(publicUrl);
+                                                                    console.log("Public URL: " + publicUrl)
+                                                                });
+
+                                                                fs.readFile(zipPath, (err, data) => {
+                                                                    if (err) throw err;
+                                                                    blobStream.end(data);
+                                                                });
+                                                            }
+                                                        });
+                                                    });
+
+                                                } else {
+                                                    console.log(`Current picture count: ${pictureCount.count}/${totalCount}`)
+                                                }
+                                            })
+                                        ).pipe(fs.createWriteStream(jpgDirPath + "/" + pdfFile + ".jpg"));
+
+                                    });
                                 });
+
 
                             });
 
+
                         } else {
-                            res.status(400).send("Output: " + data);
+                            console.log("Convert wasn't successful: " + code)
+                            res.status(400).send("Convert code: " + code);
                         }
                     })
-
 
 
                     console.log("Dir: ", path);

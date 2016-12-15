@@ -28,6 +28,5 @@ This is a PDF to JPG Converter powered by Google Cloud Engine.
 Microservices:
 
 1. UI
-2. PDF Split (splits PDF per each page) (Currently, PDF Split performs even the services as described at 3. and 4.
-3. (not yet implemented) Conversion (parallel conversion of a single page PDF to a JPG)
-4. (not yet implemented) Zipper & Storage uploader (to gather all the resulting JPGs and iterative zipping)
+2. PDF Split (splits PDF per each page) + zipper and Google Cloud storage uploader
+3. (UPDATED at 5:20 PST December 15 2016) Conversion (parallel conversion of a single page PDF to a JPG) per each 
