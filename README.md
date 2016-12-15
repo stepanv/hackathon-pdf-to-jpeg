@@ -3,6 +3,8 @@ PDF to JPG converter
 
 This is a PDF to JPG Converter powered by Google Cloud Engine.
 
+> DISCLAIMER: Note that this project was updated with a `pdf2jpg` module (which leverages improves the conversion performance by parallel pdf to jpg conversion on multiple K8N nodes) on 5:40 PST December 15 2016
+
 
 # Build and Deployment
 1. To build the application, execute:
