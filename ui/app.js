@@ -17,18 +17,31 @@
 'use strict';
 
 const express = require('express');
-const Multer = require('multer');
+const multer = require('multer');
+var tmp = require('tmp');
+var request = require('request');
 
 var fs = require("fs");
 
 const app = express();
 app.set('view engine', 'pug');
 
+
+var tmpobj = tmp.dirSync();
+console.log("Dir: ", tmpobj.name);
+
 // [START config]
 // Multer is required to process file uploads and make them available via
 // req.files.
-const multer = Multer({
-    storage: Multer.memoryStorage(),
+const upload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, tmpobj.name)
+        },
+        filename: (req, file, cb) => {
+            cb(null, file.fieldname + '-' + Date.now())
+        }
+    }),
     limits: {
         fileSize: 5 * 1024 * 1024 // no larger than 5mb, you can change as needed.
     }
@@ -50,35 +63,26 @@ const decoder = new StringDecoder('utf8');
 
 // [START process]
 // Process the file upload and upload to Google Cloud Storage.
-app.post('/upload', multer.single('file'), (req, res, next) => {
+app.post('/upload', upload.single('file'), (req, res, next) => {
     if (!req.file) {
         res.status(400).send('No file uploaded.');
         return;
     }
 
-    var FormData = require('form-data');
+    console.log("Submitting the file to: " + BACKEND_URI + "?originalname=" + req.file.originalname)
 
-    var form = new FormData();
-
-    form.append('file', req.file.buffer, {
-        filename: req.file.originalname,
-        contentType: req.file.mimetype,
-        knownLength: req.file.size
-    });
-
-    console.log("Submitting the file to: " + BACKEND_URI)
-    form.submit(BACKEND_URI, (err, result) => {
-
-        result.on('data', (chunk) => {
-            console.log('BODY: ' + chunk);
-            res.status(result.statusCode).render('result.pug', {
-                link: decoder.write(chunk)
+    fs.createReadStream(req.file.path).pipe(request
+        .post({ url: BACKEND_URI + "?originalname=" + req.file.originalname }, (err, httpResponse, body) => {
+            if (err) {
+                res.status(400).render('error.pug');
+                return console.error('upload failed:', err);
+            }
+            console.log('Upload successful!  Server responded with:', body);
+            res.status(httpResponse.statusCode).render('result.pug', {
+                link: decoder.write(body)
             });
-        });
-        console.log("Resumed: " + result.statusCode);
-        console.log("Err: " + err);
-
-    });
+        })
+    );
 });
 // [END process]
 
