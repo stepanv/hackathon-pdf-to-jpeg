@@ -65,17 +65,28 @@ const decoder = new StringDecoder('utf8');
 // Process the file upload and upload to Google Cloud Storage.
 app.post('/upload', upload.single('file'), (req, res, next) => {
     if (!req.file) {
-        res.status(400).send('No file uploaded.');
+        res.status(400).render('error.pug', {
+            message: "No file uploaded!"
+        });
         return;
     }
 
-    console.log("Submitting the file to: " + BACKEND_URI + "?originalname=" + req.file.originalname)
+    console.log("Submitting the file to: " + BACKEND_URI)
+    console.log("Original name: " + req.file.originalname)
+    console.log("Density: " + req.body.density);
+    console.log("Quality: " + req.body.quality);
 
     fs.createReadStream(req.file.path).pipe(request
-        .post({ url: BACKEND_URI + "?originalname=" + req.file.originalname }, (err, httpResponse, body) => {
+        .post({ url: `${BACKEND_URI}?originalname=${req.file.originalname}&density=${req.body.density}&quality=${req.body.quality}` }, (err, httpResponse, body) => {
             if (err) {
                 res.status(400).render('error.pug');
                 return console.error('upload failed:', err);
+            }
+            if (httpResponse.statusCode >= 300) {
+                res.status(httpResponse.statusCode).render('error.pug', {
+                    message: body
+                });
+                return console.error('upload failed:', body);
             }
             console.log('Upload successful!  Server responded with:', body);
             res.status(httpResponse.statusCode).render('result.pug', {

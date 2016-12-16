@@ -14,7 +14,7 @@ const Storage = require('@google-cloud/storage');
 // Instantiate a storage client
 const storage = Storage();
 
-const GS_EXECUTABLE = process.env.CONVERT_EXECUTABLE || "/usr/local/bin/gs";
+const GS_EXECUTABLE = process.env.GS_EXECUTABLE || "/usr/local/bin/gs";
 const PDF2JPG_URI = process.env.PDF2JPG_URI || "http://localhost:8082/pdf2jpg";
 
 var bucketName = process.env.GCLOUD_STORAGE_BUCKET;
@@ -44,7 +44,7 @@ app.post('/pdf', (req, res, next) => {
 
                         //const convert = spawn(CONVERT_EXECUTABLE, ['-quality','95', '-verbose', '-colorspace', 'rgb', '-density',
                         // '150', path, dirPath + '/image.jpg'])
-                        const split = spawn(GS_EXECUTABLE, ['-sDEVICE=pdfwrite', '-dSAFER', '-o', dirPath + '/outname.%d.pdf', path])
+                        const split = spawn(GS_EXECUTABLE, ['-sDEVICE=pdfwrite', '-dSAFER', '-o', dirPath + '/' + req.query.originalname + '.%d.pdf', path])
 
                         split.stderr.on('data', data => {
                             console.log("Convert error output: " + data);
@@ -76,7 +76,7 @@ app.post('/pdf', (req, res, next) => {
                                             console.log("Iterating over pdf page file: " + pdfFilePath);
 
                                             fs.createReadStream(pdfFilePath).pipe(request
-                                                .post(PDF2JPG_URI)
+                                                .post(`${PDF2JPG_URI}?density=${req.query.density}&quality=${req.query.quality}`)
                                                 .on('error', (err) => {
                                                     console.log("PDF File streaming error: " + err);
                                                 })
@@ -138,8 +138,8 @@ app.post('/pdf', (req, res, next) => {
 
 
                             } else {
-                                console.log("Convert wasn't successful: " + code)
-                                res.status(400).send("Convert code: " + code);
+                                console.log("Convert failed with exit code: " + code)
+                                res.status(400).send("Convert failed with exit code: " + code);
                             }
                         })
 

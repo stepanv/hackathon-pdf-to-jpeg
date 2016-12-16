@@ -16,7 +16,7 @@ app.post('/pdf2jpg', (req, res, next) => {
         req
             .pipe(fs.createWriteStream(path))
             .on('finish', () => {
-                const convert = spawn(CONVERT_EXECUTABLE, ['-quality', '95', '-verbose', '-colorspace', 'rgb', '-density', '150', path, path + '_image.jpg'])
+                const convert = spawn(CONVERT_EXECUTABLE, ['-quality', req.query.quality, '-verbose', '-colorspace', 'rgb', '-density', req.query.density, path, path + '_image.jpg'])
                 convert.stderr.on('data', data => {
                     console.log("Convert error output: " + data);
                 });

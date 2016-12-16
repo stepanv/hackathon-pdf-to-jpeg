@@ -3,7 +3,7 @@ html(lang="en")
   head
     title Convert PDF to JPEGs with ease!
     meta(charset='utf-8')
-    link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css", integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u", crossorigin="anonymous")
+    link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css")
     link(rel="stylesheet", href="https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.min.css")
     script(src="//code.jquery.com/jquery-1.12.3.js")
     style(type='text/css').
@@ -31,7 +31,7 @@ html(lang="en")
           div(class="form-group")
             label(for="file") PDF File input
             input(type="file", name="file", class="file")
-            div(class="input-group col-xs-12")
+            div(class="input-group col-xs-12", style="padding-left: 0px")
               span(class="input-group-addon")
                 i(class="glyphicon glyphicon-picture")
               input(type="text", class="form-control input-lg", disabled="disabled", placeholder="Upload PDF")
@@ -40,4 +40,18 @@ html(lang="en")
                   i(class="glyphicon glyphicon-search")
                   | &nbsp;&nbsp;Browse
             small(id="fileHelp", class="form-text text-muted") Choose a valid PDF file from your filesystem. Any other option might result in an instability of the service.
+          div(class="form-group")
+            label(for="density") Density
+            br
+            select(name="density", class="custom-select")
+              option(value="150",selected="selected") 150
+              option(value="300") 300
+              option(value="600") 600
+          div(class="form-group")
+            label(for="quality") JPG Quality
+            br
+            select(name="quality", class="custom-select")
+              option(value="95",selected="selected") 95
+              option(value="97") 97
+              option(value="100") 100
           button(type="submit", class="btn btn-primary") Submit
